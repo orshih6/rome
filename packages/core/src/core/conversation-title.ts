@@ -1,7 +1,10 @@
 import { recordModelTurnMetrics } from "../telemetry.js";
 import type { ModelSession } from "./agent-runner.js";
-import { createRomeTools } from "./mcp/server.js";
+import { createRomeTools } from "../agent/index.js";
+import { createLogger } from "../logger.js";
 import type { ModelResolver } from "./model-resolver.js";
+
+const log = createLogger("conversation-title");
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 export const CONVERSATION_TITLE_MAX_LENGTH = 50;
@@ -99,15 +102,21 @@ export function createConversationTitleGenerator(
             maxTurns: 1,
           },
           tools: createRomeTools({
-            getActionCatalog: () => [],
-            getSkillCatalog: () => [],
-            subagentTools: [],
-            executeAction: async () => {
-              throw new Error("Conversation title generation cannot execute actions");
+            actions: {
+              list: () => [],
+              run: async () => {
+                throw new Error("Conversation title generation cannot execute actions");
+              },
             },
-            executeSubagent: async () => {
-              throw new Error("Conversation title generation cannot execute subagents");
+            skills: { list: () => [] },
+            subagents: {
+              tools: [],
+              run: async () => {
+                throw new Error("Conversation title generation cannot execute subagents");
+              },
             },
+            widgetsShow: false,
+            log,
           }),
           thread: { kind: "new" },
         });
